@@ -9,22 +9,7 @@ This chatbot can answer questions, tell jokes, provide dates, explain coding con
 - Friendly and helpful
 - Written in Python using Streamlit
 
-## Installation
 
-1. Clone the repo:
-git clone https://github.com/yourusername/intelligent-chatbot.git
-
-cd intelligent-chatbot
-
-Install dependencies:
-
-3. Copy code
-pip install -r requirements.txt
-
-Create a .env file from the template and add your API key:
-
-3.Run the app:
-streamlit run app.py
 
 # Usage
 
