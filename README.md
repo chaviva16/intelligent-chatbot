@@ -13,16 +13,21 @@ This chatbot can answer questions, tell jokes, provide dates, explain coding con
 
 1. Clone the repo:
 git clone https://github.com/yourusername/intelligent-chatbot.git
+
 cd intelligent-chatbot
+
 Install dependencies:
 
-2. Copy code
+3. Copy code
 pip install -r requirements.txt
+
 Create a .env file from the template and add your API key:
 
 3.Run the app:
 streamlit run app.py
-Usage
+
+# Usage
+
 Type your message in the input box and press Send.
 
 Chat with the AI about anything: coding, jokes, dates, explanations, etc.
