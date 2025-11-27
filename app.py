@@ -18,7 +18,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # -----------------------------
-# 3. System Prompt 
+# 3. System Prompt (hidden)
 # -----------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
@@ -49,18 +49,27 @@ st.title("✨ Intelligent Chat Assistant")
 st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 
 # -----------------------------
-# 7. Chat Function with real-time date
+# 7. Chat Function with real-time date and safety handling
 # -----------------------------
 def get_response(prompt):
-    # Add current date and time to the prompt for accuracy
+    # Add current date and time
     current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
     prompt_with_context = f"Current date and time: {current_datetime}\nUser asked: {prompt}"
 
-    # Include system prompt in history but hidden
+    # Hidden system prompt in history
     chat_history = [{"role": "user", "parts": [system_prompt]}] + st.session_state.messages
     chat = model.start_chat(history=chat_history)
+
     response = chat.send_message(prompt_with_context)
-    return response.text
+
+    # Safety check and fallback
+    if hasattr(response, "text") and response.text:
+        return response.text
+    elif hasattr(response, "candidates") and response.candidates:
+        candidate = response.candidates[0]
+        if hasattr(candidate, "content"):
+            return candidate.content
+    return "⚠️ Sorry, I couldn't generate a response. It may have been blocked for safety reasons."
 
 # -----------------------------
 # 8. Display Chat History
