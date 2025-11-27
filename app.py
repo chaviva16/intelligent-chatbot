@@ -8,9 +8,8 @@ import os
 st.set_page_config(page_title="Intelligent Chat Assistant", page_icon="✨")
 
 # ----------------------------------
-# 2. Load Gemini API Key
+# 2. Load API Key
 # ----------------------------------
-
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if not api_key:
@@ -19,7 +18,7 @@ else:
     genai.configure(api_key=api_key)
 
 # ----------------------------------
-# 3. System Prompt
+# 3. System Prompt 
 # ----------------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
@@ -41,12 +40,9 @@ Abilities:
 """
 
 # ----------------------------------
-# 4. Initialize Gemini Model (FIXED)
+# 4. Initialize Model 
 # ----------------------------------
-model = genai.GenerativeModel(
-    "gemini-1.5-flash",
-    system_instruction=system_prompt
-)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ----------------------------------
 # 5. Streamlit UI
@@ -58,7 +54,9 @@ st.write("A friendly AI assistant ready to chat with you!")
 # 6. Chat History
 # ----------------------------------
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {"role": "system", "parts": [system_prompt]}
+    ]  
 
 # ----------------------------------
 # 7. Chat Function
@@ -69,9 +67,12 @@ def get_response(prompt):
     return response.text
 
 # ----------------------------------
-# 8. Display Chat History
+# 8. Show Chat History
 # ----------------------------------
 for message in st.session_state.messages:
+    if message["role"] == "system":
+        continue  
+
     role = "🧑‍💻 You" if message["role"] == "user" else "🤖 AI"
     st.markdown(f"**{role}:** {message['parts'][0]}")
 
@@ -81,20 +82,23 @@ for message in st.session_state.messages:
 user_input = st.text_input("Type your message here...")
 
 if st.button("Send") or (user_input and user_input.strip() != ""):
-    # Save user message
+
+    # Store user message
     st.session_state.messages.append({"role": "user", "parts": [user_input]})
 
     # Get AI response
     ai_response = get_response(user_input)
 
-    # Save AI response
+    # Store AI response
     st.session_state.messages.append({"role": "model", "parts": [ai_response]})
 
     st.experimental_rerun()
 
 # ----------------------------------
-# 10. Clear Chat Button
+# 10. Clear Chat
 # ----------------------------------
 if st.button("Clear Chat"):
-    st.session_state.messages = []
+    st.session_state.messages = [
+        {"role": "system", "parts": [system_prompt]}
+    ]
     st.experimental_rerun()
