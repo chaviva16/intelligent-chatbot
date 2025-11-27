@@ -1,5 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime
 
 # -----------------------------
 # 1. Page Config
@@ -17,24 +18,22 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # -----------------------------
-# 3. System Prompt (first message)
+# 3. System Prompt (strict, concise)
 # -----------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
 
-Guidelines:
-- Clear, accurate explanations
-- Warm, friendly conversation
-- Break down complex topics
-- Provide examples
-- Write clean code with comments
-- If unsure, say “I’m not certain, but here’s my best suggestion.”
-- Keep answers helpful and supportive
+Rules:
+- Always give concise, accurate answers.
+- Do not add extra facts or commentary unless asked.
+- Keep responses simple, clear, and relevant.
+- Use warm, friendly language.
+- When writing code, provide clean Python code with comments.
 
 Abilities:
-- Data Science, ML, Python, SQL, AI
-- Code writing and debugging
-- Dates, fun facts, jokes, general conversation
+- Answer questions about Data Science, ML, Python, SQL, AI.
+- Write and debug code.
+- Provide general conversation and direct answers.
 """
 
 # -----------------------------
@@ -66,7 +65,7 @@ def get_response(prompt):
     return response.text
 
 # -----------------------------
-# 8. Display Chat History with bubbles
+# 8. Display Chat History
 # -----------------------------
 for message in st.session_state.messages:
     if message["role"] == "user":
@@ -88,8 +87,23 @@ for message in st.session_state.messages:
 user_input = st.text_input("Type your message here...", key="user_input")
 
 if st.button("Send") and user_input.strip() != "":
-    get_response(user_input)
-    # Streamlit automatically clears input on next render
+    # -------------------------
+    # Handle real-time queries
+    # -------------------------
+    lower_input = user_input.lower()
+    ai_response = ""
+    
+    if "date" in lower_input:
+        today = datetime.now().strftime("%A, %B %d, %Y")
+        ai_response = f"Today is {today}."
+    elif "time" in lower_input:
+        current_time = datetime.now().strftime("%H:%M:%S")
+        ai_response = f"The current time is {current_time}."
+    else:
+        # fallback to Gemini AI
+        ai_response = get_response(user_input)
+    
+    st.session_state.messages.append({"role": "model", "parts": [ai_response]})
 
 # -----------------------------
 # 10. Clear Chat Button
