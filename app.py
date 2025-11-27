@@ -17,7 +17,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # -----------------------------
-# 3. System Prompt
+# 3. System Prompt 
 # -----------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
@@ -46,7 +46,8 @@ model = genai.GenerativeModel("gemini-flash-latest")
 # 5. Chat History
 # -----------------------------
 if "messages" not in st.session_state:
-    st.session_state.messages = []  
+    # inject system prompt as the first “user” message
+    st.session_state.messages = [{"role": "user", "content": system_prompt}]
 
 # -----------------------------
 # 6. Streamlit UI
@@ -58,9 +59,12 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    # start chat with system prompt only at creation
-    chat_session = model.start_chat(system_prompt=system_prompt, history=st.session_state.messages)
-    response = chat_session.send_message(prompt)
+    # Append new user message to history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    chat = model.start_chat(history=st.session_state.messages)
+    response = chat.send_message(prompt)
+    # Append AI response to history
+    st.session_state.messages.append({"role": "model", "content": response.text})
     return response.text
 
 # -----------------------------
@@ -70,13 +74,13 @@ for message in st.session_state.messages:
     if message["role"] == "user":
         st.markdown(f"""
         <div style="text-align: right; background-color: #DCF8C6; padding: 10px; border-radius: 10px; margin: 5px;">
-        🧑 You: {message['parts'][0]}
+        🧑 You: {message['content']}
         </div>
         """, unsafe_allow_html=True)
     elif message["role"] == "model":
         st.markdown(f"""
         <div style="text-align: left; background-color: #F1F0F0; padding: 10px; border-radius: 10px; margin: 5px;">
-        🤖 AI: {message['parts'][0]}
+        🤖 AI: {message['content']}
         </div>
         """, unsafe_allow_html=True)
 
@@ -85,14 +89,12 @@ for message in st.session_state.messages:
 # -----------------------------
 user_input = st.text_input("Type your message here...", key="user_input")
 
-if st.button("Send"):
-    if user_input.strip() != "":
-        st.session_state.messages.append({"role": "user", "parts": [user_input]})
-        ai_response = get_response(user_input)
-        st.session_state.messages.append({"role": "model", "parts": [ai_response]})
+if st.button("Send") and user_input.strip() != "":
+    get_response(user_input)
+    st.session_state.user_input = ""  # input clears automatically on next render
 
 # -----------------------------
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
-    st.session_state.messages = []
+    st.session_state.messages = [{"role": "user", "content": system_prompt}]
