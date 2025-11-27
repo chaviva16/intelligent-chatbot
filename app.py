@@ -29,11 +29,6 @@ Rules:
 - Keep responses simple, clear, and relevant.
 - Use warm, friendly language.
 - When writing code, provide clean Python code with comments.
-
-Abilities:
-- Answer questions about Data Science, ML, Python, SQL, AI.
-- Write and debug code.
-- Provide general conversation, date, time, and direct answers.
 """
 
 # -----------------------------
@@ -45,7 +40,6 @@ model = genai.GenerativeModel("gemini-flash-latest")
 # 5. Chat History
 # -----------------------------
 if "messages" not in st.session_state:
-    # only store real messages, system_prompt is kept separately for the model
     st.session_state.messages = []
 
 # -----------------------------
@@ -58,7 +52,7 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    # Prepare history for model (include system_prompt but not displayed)
+    # Include system prompt in history but don't display it
     chat_history = [{"role": "user", "parts": [system_prompt]}] + st.session_state.messages
     chat = model.start_chat(history=chat_history)
     response = chat.send_message(prompt)
@@ -82,19 +76,21 @@ for message in st.session_state.messages:
         """, unsafe_allow_html=True)
 
 # -----------------------------
-# 9. User Input
+# 9. User Input with callback
 # -----------------------------
-# Use session_state to auto-clear input
-if "input_value" not in st.session_state:
-    st.session_state.input_value = ""
+def send_message():
+    user_input = st.session_state.input_value
+    if user_input.strip() != "":
+        st.session_state.messages.append({"role": "user", "parts": [user_input]})
+        ai_response = get_response(user_input)
+        st.session_state.messages.append({"role": "model", "parts": [ai_response]})
+        # Clear input safely via session_state
+        st.session_state.input_value = ""
 
-user_input = st.text_input("Type your message here...", key="input_value")
+st.text_input("Type your message here...", key="input_value", on_change=send_message)
 
-if st.button("Send") and user_input.strip() != "":
-    # Save user message
-    st.session_state.messages.append({"role": "user", "parts": [user_input]})
-    # Get AI response
-    ai_response = get_response(user_input)
-    st.session_state.messages.append({"role": "model", "parts": [ai_response]})
-    # Clear input for next question
-    st.session_state.input_value = ""
+# -----------------------------
+# 10. Clear Chat Button
+# -----------------------------
+if st.button("Clear Chat"):
+    st.session_state.messages = []
