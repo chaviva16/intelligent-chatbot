@@ -46,7 +46,7 @@ model = genai.GenerativeModel("gemini-flash-latest")
 # 5. Chat History
 # -----------------------------
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "parts": [system_prompt]}]
+    st.session_state.messages = []  
 
 # -----------------------------
 # 6. Streamlit UI
@@ -58,7 +58,8 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    chat_session = model.start_chat(history=st.session_state.messages)
+    # start chat with system prompt only at creation
+    chat_session = model.start_chat(system_prompt=system_prompt, history=st.session_state.messages)
     response = chat_session.send_message(prompt)
     return response.text
 
@@ -66,15 +67,13 @@ def get_response(prompt):
 # 8. Display Chat History with bubbles
 # -----------------------------
 for message in st.session_state.messages:
-    if message["role"] == "system":
-        continue
     if message["role"] == "user":
         st.markdown(f"""
         <div style="text-align: right; background-color: #DCF8C6; padding: 10px; border-radius: 10px; margin: 5px;">
         🧑 You: {message['parts'][0]}
         </div>
         """, unsafe_allow_html=True)
-    else:
+    elif message["role"] == "model":
         st.markdown(f"""
         <div style="text-align: left; background-color: #F1F0F0; padding: 10px; border-radius: 10px; margin: 5px;">
         🤖 AI: {message['parts'][0]}
@@ -96,4 +95,4 @@ if st.button("Send"):
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
-    st.session_state.messages = [{"role": "system", "parts": [system_prompt]}]
+    st.session_state.messages = []
