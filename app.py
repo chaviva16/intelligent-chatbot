@@ -52,7 +52,7 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    # Include system prompt in history but don't display it
+    
     chat_history = [{"role": "user", "parts": [system_prompt]}] + st.session_state.messages
     chat = model.start_chat(history=chat_history)
     response = chat.send_message(prompt)
@@ -87,11 +87,9 @@ with st.form(key="chat_form", clear_on_submit=True):
         # Get AI response
         ai_response = get_response(user_input)
         st.session_state.messages.append({"role": "model", "parts": [ai_response]})
-        st.experimental_rerun()
 
 # -----------------------------
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
     st.session_state.messages = []
-    st.experimental_rerun()
