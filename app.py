@@ -84,18 +84,16 @@ for message in st.session_state.messages:
 # -----------------------------
 # 9. User Input
 # -----------------------------
-user_input = st.text_input("Type your message here...", key="input")
+user_input = st.text_input("Type your message here...", key="user_input")
 
 if st.button("Send"):
     if user_input.strip() != "":
         st.session_state.messages.append({"role": "user", "parts": [user_input]})
         ai_response = get_response(user_input)
         st.session_state.messages.append({"role": "model", "parts": [ai_response]})
-        st.session_state.input = ""  # Clear input box
 
 # -----------------------------
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
     st.session_state.messages = [{"role": "system", "parts": [system_prompt]}]
-    st.session_state.input = ""
