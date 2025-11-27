@@ -9,13 +9,13 @@ import os
 st.set_page_config(page_title="Intelligent Chat Assistant", page_icon="✨")
 
 # ----------------------------------
-# 2. Load API Key from .env file
 # ----------------------------------
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+# Load API Key (Streamlit Cloud uses st.secrets)
+# ----------------------------------
+api_key = st.secrets.get("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("API key not found. Please create a .env file with GEMINI_API_KEY=your_key")
+    st.error("API key not found. Add GEMINI_API_KEY to Streamlit Cloud Secrets.")
 else:
     genai.configure(api_key=api_key)
 
