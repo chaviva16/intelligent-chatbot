@@ -76,21 +76,22 @@ for message in st.session_state.messages:
         """, unsafe_allow_html=True)
 
 # -----------------------------
-# 9. User Input with callback
+# 9. User Input using form (auto-reset)
 # -----------------------------
-def send_message():
-    user_input = st.session_state.input_value
-    if user_input.strip() != "":
+with st.form(key="chat_form", clear_on_submit=True):
+    user_input = st.text_input("Type your message here...")
+    submit_button = st.form_submit_button("Send")
+    if submit_button and user_input.strip() != "":
+        # Save user message
         st.session_state.messages.append({"role": "user", "parts": [user_input]})
+        # Get AI response
         ai_response = get_response(user_input)
         st.session_state.messages.append({"role": "model", "parts": [ai_response]})
-        # Clear input safely via session_state
-        st.session_state.input_value = ""
-
-st.text_input("Type your message here...", key="input_value", on_change=send_message)
+        st.experimental_rerun()
 
 # -----------------------------
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
     st.session_state.messages = []
+    st.experimental_rerun()
