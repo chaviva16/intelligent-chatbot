@@ -49,13 +49,17 @@ st.title("✨ Intelligent Chat Assistant")
 st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 
 # -----------------------------
-# 7. Chat Function
+# 7. Chat Function with real-time date
 # -----------------------------
 def get_response(prompt):
-    
+    # Add current date and time to the prompt for accuracy
+    current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
+    prompt_with_context = f"Current date and time: {current_datetime}\nUser asked: {prompt}"
+
+    # Include system prompt in history but hidden
     chat_history = [{"role": "user", "parts": [system_prompt]}] + st.session_state.messages
     chat = model.start_chat(history=chat_history)
-    response = chat.send_message(prompt)
+    response = chat.send_message(prompt_with_context)
     return response.text
 
 # -----------------------------
