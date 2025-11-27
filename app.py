@@ -1,17 +1,16 @@
 import streamlit as st
 import google.generativeai as genai
-from dotenv import load_dotenv
 import os
 
 # ----------------------------------
-# 1. Streamlit Page Config (FIRST COMMAND)
+# 1. Streamlit Page Config
 # ----------------------------------
 st.set_page_config(page_title="Intelligent Chat Assistant", page_icon="✨")
 
 # ----------------------------------
+# 2. Load Gemini API Key
 # ----------------------------------
-# Load API Key (Streamlit Cloud uses st.secrets)
-# ----------------------------------
+
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if not api_key:
@@ -42,10 +41,10 @@ Abilities:
 """
 
 # ----------------------------------
-# 4. Initialize Gemini Model
+# 4. Initialize Gemini Model (FIXED)
 # ----------------------------------
 model = genai.GenerativeModel(
-    model_name="gemini-pro-latest",
+    "gemini-1.5-flash",
     system_instruction=system_prompt
 )
 
@@ -70,7 +69,7 @@ def get_response(prompt):
     return response.text
 
 # ----------------------------------
-# 8. Display Previous Chat Messages
+# 8. Display Chat History
 # ----------------------------------
 for message in st.session_state.messages:
     role = "🧑‍💻 You" if message["role"] == "user" else "🤖 AI"
@@ -84,10 +83,13 @@ user_input = st.text_input("Type your message here...")
 if st.button("Send") or (user_input and user_input.strip() != ""):
     # Save user message
     st.session_state.messages.append({"role": "user", "parts": [user_input]})
+
     # Get AI response
     ai_response = get_response(user_input)
+
     # Save AI response
     st.session_state.messages.append({"role": "model", "parts": [ai_response]})
+
     st.experimental_rerun()
 
 # ----------------------------------
