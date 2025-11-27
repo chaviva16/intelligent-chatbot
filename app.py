@@ -12,20 +12,20 @@ st.set_page_config(page_title="Intelligent Chat Assistant", page_icon="✨")
 # -----------------------------
 api_key = st.secrets.get("GEMINI_API_KEY")
 if not api_key:
-    st.error("API key not found. Add GEMINI_API_KEY to Streamlit Cloud Secrets.")
+    st.error("Gemini API key not found. Add GEMINI_API_KEY to Streamlit Cloud Secrets.")
     st.stop()
 
 genai.configure(api_key=api_key)
 
 # -----------------------------
-# 3. System Prompt (strict, concise)
+# 3. System Prompt 
 # -----------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
 
 Rules:
 - Always give concise, accurate answers.
-- Do not add extra facts or commentary unless asked.
+- Do not add extra facts unless asked.
 - Keep responses simple, clear, and relevant.
 - Use warm, friendly language.
 - When writing code, provide clean Python code with comments.
@@ -33,7 +33,7 @@ Rules:
 Abilities:
 - Answer questions about Data Science, ML, Python, SQL, AI.
 - Write and debug code.
-- Provide general conversation and direct answers.
+- Provide general conversation, date, time, and direct answers.
 """
 
 # -----------------------------
@@ -45,8 +45,8 @@ model = genai.GenerativeModel("gemini-flash-latest")
 # 5. Chat History
 # -----------------------------
 if "messages" not in st.session_state:
-    # store messages as role + parts
-    st.session_state.messages = [{"role": "user", "parts": [system_prompt]}]
+    # only store real messages, system_prompt is kept separately for the model
+    st.session_state.messages = []
 
 # -----------------------------
 # 6. Streamlit UI
@@ -58,10 +58,10 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    st.session_state.messages.append({"role": "user", "parts": [prompt]})
-    chat = model.start_chat(history=st.session_state.messages)
+    # Prepare history for model (include system_prompt but not displayed)
+    chat_history = [{"role": "user", "parts": [system_prompt]}] + st.session_state.messages
+    chat = model.start_chat(history=chat_history)
     response = chat.send_message(prompt)
-    st.session_state.messages.append({"role": "model", "parts": [response.text]})
     return response.text
 
 # -----------------------------
@@ -84,29 +84,17 @@ for message in st.session_state.messages:
 # -----------------------------
 # 9. User Input
 # -----------------------------
-user_input = st.text_input("Type your message here...", key="user_input")
+# Use session_state to auto-clear input
+if "input_value" not in st.session_state:
+    st.session_state.input_value = ""
+
+user_input = st.text_input("Type your message here...", key="input_value")
 
 if st.button("Send") and user_input.strip() != "":
-    # -------------------------
-    # Handle real-time queries
-    # -------------------------
-    lower_input = user_input.lower()
-    ai_response = ""
-    
-    if "date" in lower_input:
-        today = datetime.now().strftime("%A, %B %d, %Y")
-        ai_response = f"Today is {today}."
-    elif "time" in lower_input:
-        current_time = datetime.now().strftime("%H:%M:%S")
-        ai_response = f"The current time is {current_time}."
-    else:
-        # fallback to Gemini AI
-        ai_response = get_response(user_input)
-    
+    # Save user message
+    st.session_state.messages.append({"role": "user", "parts": [user_input]})
+    # Get AI response
+    ai_response = get_response(user_input)
     st.session_state.messages.append({"role": "model", "parts": [ai_response]})
-
-# -----------------------------
-# 10. Clear Chat Button
-# -----------------------------
-if st.button("Clear Chat"):
-    st.session_state.messages = [{"role": "user", "parts": [system_prompt]}]
+    # Clear input for next question
+    st.session_state.input_value = ""
