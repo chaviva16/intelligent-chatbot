@@ -17,7 +17,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # -----------------------------
-# 3. System Prompt 
+# 3. System Prompt (first message)
 # -----------------------------
 system_prompt = """
 You are an Intelligent Chat Assistant.
@@ -46,8 +46,8 @@ model = genai.GenerativeModel("gemini-flash-latest")
 # 5. Chat History
 # -----------------------------
 if "messages" not in st.session_state:
-    # inject system prompt as the first “user” message
-    st.session_state.messages = [{"role": "user", "content": system_prompt}]
+    # store messages as role + parts
+    st.session_state.messages = [{"role": "user", "parts": [system_prompt]}]
 
 # -----------------------------
 # 6. Streamlit UI
@@ -59,12 +59,10 @@ st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 # 7. Chat Function
 # -----------------------------
 def get_response(prompt):
-    # Append new user message to history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "user", "parts": [prompt]})
     chat = model.start_chat(history=st.session_state.messages)
     response = chat.send_message(prompt)
-    # Append AI response to history
-    st.session_state.messages.append({"role": "model", "content": response.text})
+    st.session_state.messages.append({"role": "model", "parts": [response.text]})
     return response.text
 
 # -----------------------------
@@ -74,13 +72,13 @@ for message in st.session_state.messages:
     if message["role"] == "user":
         st.markdown(f"""
         <div style="text-align: right; background-color: #DCF8C6; padding: 10px; border-radius: 10px; margin: 5px;">
-        🧑 You: {message['content']}
+        🧑 You: {message['parts'][0]}
         </div>
         """, unsafe_allow_html=True)
     elif message["role"] == "model":
         st.markdown(f"""
         <div style="text-align: left; background-color: #F1F0F0; padding: 10px; border-radius: 10px; margin: 5px;">
-        🤖 AI: {message['content']}
+        🤖 AI: {message['parts'][0]}
         </div>
         """, unsafe_allow_html=True)
 
@@ -91,10 +89,10 @@ user_input = st.text_input("Type your message here...", key="user_input")
 
 if st.button("Send") and user_input.strip() != "":
     get_response(user_input)
-    st.session_state.user_input = ""  # input clears automatically on next render
+    # Streamlit automatically clears input on next render
 
 # -----------------------------
 # 10. Clear Chat Button
 # -----------------------------
 if st.button("Clear Chat"):
-    st.session_state.messages = [{"role": "user", "content": system_prompt}]
+    st.session_state.messages = [{"role": "user", "parts": [system_prompt]}]
