@@ -81,36 +81,26 @@ st.title("✨ Intelligent Chat Assistant")
 st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 
 # -----------------------------------------------------
-# 9. Display Chat Messages
+# 9.# Show Chat Messages
 # -----------------------------------------------------
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(
-            f"""
-            <div style="text-align: right; background-color:#DCF8C6;padding:10px;border-radius:8px;margin:5px">
-            🧑 <b>You:</b> {msg['parts'][0]}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            f"<div class='chat-user'>🧑 <b>You:</b> {msg['parts'][0]}</div>",
+            unsafe_allow_html=True)
     else:
         st.markdown(
-            f"""
-            <div style="text-align: left; background-color:#F1F0F0;padding:10px;border-radius:8px;margin:5px">
-            🤖 <b>AI:</b> {msg['parts'][0]}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            f"<div class='chat-ai'>🤖 <b>AI:</b> {msg['parts'][0]}</div>",
+            unsafe_allow_html=True)
 
 # -----------------------------------------------------
-# 10. Input Form (Single Enter Click)
+# 10. Input Form 
 # -----------------------------------------------------
 with st.form(key="chat_form", clear_on_submit=True):
     user_input = st.text_input("Type your message here...")
     entered = st.form_submit_button("Enter")
 
-# Handle after form submission (outside form to avoid double-click bug)
+# Handle after form submission 
 if entered and user_input.strip():
 
     # Prevent double replies on rerun
