@@ -41,6 +41,9 @@ model = genai.GenerativeModel("gemini-flash-latest")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "last_input" not in st.session_state:
+    st.session_state.last_input = None  # helps avoid double-submit
+
 # -----------------------------------------------------
 # 6. Format Chat History
 # -----------------------------------------------------
@@ -52,7 +55,7 @@ def format_chat_history():
     return history_text
 
 # -----------------------------------------------------
-# 7. Fast Response Function
+# 7. Function to get response
 # -----------------------------------------------------
 def get_fast_response(user_message):
     current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
@@ -68,69 +71,65 @@ Chat history:
 User: {user_message}
 AI:
 """
-
     response = model.generate_content(full_prompt)
     return getattr(response, "text", "⚠️ AI could not generate a response.")
 
 # -----------------------------------------------------
-# 8. Custom CSS for Beautiful Chat Bubbles
-# -----------------------------------------------------
-st.markdown("""
-<style>
-
-.chat-user {
-    background-color: #C8F7C5;
-    color: #000;
-    padding: 10px;
-    border-radius: 12px;
-    margin: 8px 0;
-    text-align: right;
-}
-
-.chat-ai {
-    background-color: #ECECEC;
-    color: #000;
-    padding: 10px;
-    border-radius: 12px;
-    margin: 8px 0;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------
-# 9. UI Header
+# 8. UI Header
 # -----------------------------------------------------
 st.title("✨ Intelligent Chat Assistant")
 st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 
 # -----------------------------------------------------
-# 10. Show Chat Messages
+# 9. Display Chat Messages
 # -----------------------------------------------------
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(
-            f"<div class='chat-user'>🧑 <b>You:</b> {msg['parts'][0]}</div>",
-            unsafe_allow_html=True)
+            f"""
+            <div style="text-align: right; background-color:#DCF8C6;padding:10px;border-radius:8px;margin:5px">
+            🧑 <b>You:</b> {msg['parts'][0]}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
         st.markdown(
-            f"<div class='chat-ai'>🤖 <b>AI:</b> {msg['parts'][0]}</div>",
-            unsafe_allow_html=True)
+            f"""
+            <div style="text-align: left; background-color:#F1F0F0;padding:10px;border-radius:8px;margin:5px">
+            🤖 <b>AI:</b> {msg['parts'][0]}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # -----------------------------------------------------
-# 11. Input Form 
+# 10. Input Form (Single Enter Click)
 # -----------------------------------------------------
 with st.form(key="chat_form", clear_on_submit=True):
     user_input = st.text_input("Type your message here...")
-    send = st.form_submit_button("Send")
+    entered = st.form_submit_button("Enter")
 
-    if send and user_input.strip():
+# Handle after form submission (outside form to avoid double-click bug)
+if entered and user_input.strip():
+
+    # Prevent double replies on rerun
+    if st.session_state.last_input != user_input:
+        st.session_state.last_input = user_input
+
+        # Add user message
         st.session_state.messages.append({"role": "user", "parts": [user_input]})
+
+        # Generate AI response
         ai_reply = get_fast_response(user_input)
         st.session_state.messages.append({"role": "model", "parts": [ai_reply]})
 
+        st.rerun()
+
 # -----------------------------------------------------
-# 12. Clear Chat Button
+# 11. Clear Chat
 # -----------------------------------------------------
 if st.button("Clear Chat"):
     st.session_state.messages = []
+    st.session_state.last_input = None
+    st.rerun()
