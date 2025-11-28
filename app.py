@@ -42,7 +42,17 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # -----------------------------------------------------
-# 6. Function to get fast response
+# 6. Format Chat History
+# -----------------------------------------------------
+def format_chat_history():
+    history_text = ""
+    for msg in st.session_state.messages:
+        role = "User" if msg["role"] == "user" else "AI"
+        history_text += f"{role}: {msg['parts'][0]}\n"
+    return history_text
+
+# -----------------------------------------------------
+# 7. Fast Response Function
 # -----------------------------------------------------
 def get_fast_response(user_message):
     current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
@@ -59,53 +69,56 @@ User: {user_message}
 AI:
 """
 
-   
     response = model.generate_content(full_prompt)
-
-    # Return safe text regardless of structure
     return getattr(response, "text", "⚠️ AI could not generate a response.")
 
 # -----------------------------------------------------
-# 7. Format Chat History
+# 8. Custom CSS for Beautiful Chat Bubbles
 # -----------------------------------------------------
-def format_chat_history():
-    history_text = ""
-    for msg in st.session_state.messages:
-        role = "User" if msg["role"] == "user" else "AI"
-        history_text += f"{role}: {msg['parts'][0]}\n"
-    return history_text
+st.markdown("""
+<style>
+
+.chat-user {
+    background-color: #C8F7C5;
+    color: #000;
+    padding: 10px;
+    border-radius: 12px;
+    margin: 8px 0;
+    text-align: right;
+}
+
+.chat-ai {
+    background-color: #ECECEC;
+    color: #000;
+    padding: 10px;
+    border-radius: 12px;
+    margin: 8px 0;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------
-# 8. UI Header
+# 9. UI Header
 # -----------------------------------------------------
 st.title("✨ Intelligent Chat Assistant")
 st.write("A friendly AI chatbot ready to chat with you 🤖💬")
 
 # -----------------------------------------------------
-# 9. Show Chat Messages
+# 10. Show Chat Messages
 # -----------------------------------------------------
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(
-            f"""
-            <div style="text-align: right; background-color:#DCF8C6;padding:10px;border-radius:8px;margin:5px">
-            🧑 <b>You:</b> {msg['parts'][0]}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            f"<div class='chat-user'>🧑 <b>You:</b> {msg['parts'][0]}</div>",
+            unsafe_allow_html=True)
     else:
         st.markdown(
-            f"""
-            <div style="text-align: left; background-color:#F1F0F0;padding:10px;border-radius:8px;margin:5px">
-            🤖 <b>AI:</b> {msg['parts'][0]}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            f"<div class='chat-ai'>🤖 <b>AI:</b> {msg['parts'][0]}</div>",
+            unsafe_allow_html=True)
 
 # -----------------------------------------------------
-# 10. Input Form 
+# 11. Input Form 
 # -----------------------------------------------------
 with st.form(key="chat_form", clear_on_submit=True):
     user_input = st.text_input("Type your message here...")
@@ -117,7 +130,7 @@ with st.form(key="chat_form", clear_on_submit=True):
         st.session_state.messages.append({"role": "model", "parts": [ai_reply]})
 
 # -----------------------------------------------------
-# 11. Clear Chat
+# 12. Clear Chat Button
 # -----------------------------------------------------
 if st.button("Clear Chat"):
     st.session_state.messages = []
