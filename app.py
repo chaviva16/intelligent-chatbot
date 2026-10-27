@@ -35,9 +35,13 @@ Rules:
 """
 
 # -----------------------------------------------------
-# 4. Initialize model
+# 4. Model options with fallback support
 # -----------------------------------------------------
-model = genai.GenerativeModel("gemini-1.5-flash")
+MODEL_CANDIDATES = [
+    "gemini-2.0-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash",
+]
 
 # -----------------------------------------------------
 # 5. Session State
@@ -66,18 +70,34 @@ def recent_context(limit=6):
 def get_ai_reply(user_message: str) -> str:
     prompt = f"{SYSTEM_PROMPT}\n\n{recent_context()}\nUser: {user_message}"
 
-    for attempt in range(3):
-        try:
-            response = model.generate_content(prompt)
-            return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
-        except Exception as e:
-            msg = str(e)
-            if "504" in msg or "Deadline" in msg or "timed out" in msg.lower():
-                if attempt < 2:
-                    time.sleep(2 ** attempt)
-                    continue
-                return "The AI service is temporarily slow. Please try again in a moment."
-            return f"Sorry, I hit an error while generating a response: {e}"
+    last_error = None
+
+    for model_name in MODEL_CANDIDATES:
+        model = genai.GenerativeModel(model_name)
+
+        for attempt in range(3):
+            try:
+                response = model.generate_content(prompt)
+                return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
+            except Exception as e:
+                msg = str(e)
+                last_error = msg
+
+                # Retry transient timeouts or 504s
+                if "504" in msg or "Deadline" in msg or "timed out" in msg.lower():
+                    if attempt < 2:
+                        time.sleep(2 ** attempt)
+                        continue
+                    break
+
+                # If the model name is invalid or not available, try the next one.
+                if "404" in msg or "not found" in msg.lower() or "not supported" in msg.lower():
+                    break
+
+                return f"Sorry, I hit an error while generating a response: {e}"
+
+    if last_error:
+        return f"The selected Gemini model is unavailable right now. Please try again in a moment. Details: {last_error}"
 
     return "The AI service is currently unavailable. Please try again."
 
