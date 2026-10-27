@@ -1,11 +1,14 @@
 import streamlit as st
 import google.generativeai as genai
-from datetime import datetime
 
 # -----------------------------------------------------
 # 1. Page Config
 # -----------------------------------------------------
-st.set_page_config(page_title="Intelligent Chat Assistant", page_icon="✨")
+st.set_page_config(
+    page_title="Intelligent Chat Assistant",
+    page_icon="✨",
+    layout="centered",
+)
 
 # -----------------------------------------------------
 # 2. Load API Key
@@ -36,90 +39,61 @@ Rules:
 model = genai.GenerativeModel("gemini-flash-latest")
 
 # -----------------------------------------------------
-# 5. Session State for Messages
+# 5. Session State
 # -----------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "last_input" not in st.session_state:
-    st.session_state.last_input = None  # helps avoid double-submit
+if "chat" not in st.session_state:
+    st.session_state.chat = model.start_chat(history=[])
 
 # -----------------------------------------------------
-# 6. Format Chat History
+# 6. Helper Functions
 # -----------------------------------------------------
-def format_chat_history():
-    history_text = ""
+def render_messages():
     for msg in st.session_state.messages:
-        role = "User" if msg["role"] == "user" else "AI"
-        history_text += f"{role}: {msg['parts'][0]}\n"
-    return history_text
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+
+def get_ai_reply(user_message: str) -> str:
+    try:
+        response = st.session_state.chat.send_message(user_message)
+        return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
+    except Exception as e:
+        return f"Sorry, I hit an error while generating a response: {e}"
 
 # -----------------------------------------------------
-# 7. Function to get response
-# -----------------------------------------------------
-def get_fast_response(user_message):
-    current_datetime = datetime.now().strftime("%A, %B %d, %Y %H:%M:%S")
-
-    full_prompt = f"""
-{SYSTEM_PROMPT}
-
-Current date and time: {current_datetime}
-
-Chat history:
-{format_chat_history()}
-
-User: {user_message}
-AI:
-"""
-    response = model.generate_content(full_prompt)
-    return getattr(response, "text", "⚠️ AI could not generate a response.")
-
-# -----------------------------------------------------
-# 8. UI Header
+# 7. UI Header
 # -----------------------------------------------------
 st.title("✨ Intelligent Chat Assistant")
-st.write("A friendly AI chatbot ready to chat with you 🤖💬")
+st.caption("A friendly AI chatbot ready to chat with you 🤖💬")
 
-# -----------------------------------------------------
-# 9.# Show Chat Messages
-# -----------------------------------------------------
-for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.markdown(
-            f"<div class='chat-user'>🧑 <b>You:</b> {msg['parts'][0]}</div>",
-            unsafe_allow_html=True)
-    else:
-        st.markdown(
-            f"<div class='chat-ai'>🤖 <b>AI:</b> {msg['parts'][0]}</div>",
-            unsafe_allow_html=True)
-
-# -----------------------------------------------------
-# 10. Input Form 
-# -----------------------------------------------------
-with st.form(key="chat_form", clear_on_submit=True):
-    user_input = st.text_input("Type your message here...")
-    entered = st.form_submit_button("Enter")
-
-# Handle after form submission 
-if entered and user_input.strip():
-
-    # Prevent double replies on rerun
-    if st.session_state.last_input != user_input:
-        st.session_state.last_input = user_input
-
-        # Add user message
-        st.session_state.messages.append({"role": "user", "parts": [user_input]})
-
-        # Generate AI response
-        ai_reply = get_fast_response(user_input)
-        st.session_state.messages.append({"role": "model", "parts": [ai_reply]})
-
-        st.rerun()
-
-# -----------------------------------------------------
-# 11. Clear Chat
-# -----------------------------------------------------
-if st.button("Clear Chat"):
+# Sidebar actions
+st.sidebar.title("Controls")
+if st.sidebar.button("Clear Chat"):
     st.session_state.messages = []
-    st.session_state.last_input = None
+    st.session_state.chat = model.start_chat(history=[])
     st.rerun()
+
+# -----------------------------------------------------
+# 8. Render chat history
+# -----------------------------------------------------
+render_messages()
+
+# -----------------------------------------------------
+# 9. Chat input
+# -----------------------------------------------------
+user_input = st.chat_input("Type your message here...")
+
+if user_input:
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            ai_reply = get_ai_reply(user_input)
+        st.markdown(ai_reply)
+
+    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
