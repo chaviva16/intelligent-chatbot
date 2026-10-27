@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import google.generativeai as genai
 
@@ -36,7 +37,10 @@ Rules:
 # -----------------------------------------------------
 # 4. Initialize model
 # -----------------------------------------------------
-model = genai.GenerativeModel("gemini-flash-latest")
+model = genai.GenerativeModel(
+    "gemini-1.5-flash",
+    system_instruction=SYSTEM_PROMPT,
+)
 
 # -----------------------------------------------------
 # 5. Session State
@@ -57,11 +61,19 @@ def render_messages():
 
 
 def get_ai_reply(user_message: str) -> str:
-    try:
-        response = st.session_state.chat.send_message(user_message)
-        return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
-    except Exception as e:
-        return f"Sorry, I hit an error while generating a response: {e}"
+    for attempt in range(3):
+        try:
+            response = st.session_state.chat.send_message(user_message)
+            return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
+        except Exception as e:
+            msg = str(e)
+            if "504" in msg or "Deadline" in msg or "timed out" in msg.lower():
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+                    continue
+                return "The AI service is temporarily slow. Please try again in a moment."
+            return f"Sorry, I hit an error while generating a response: {e}"
+    return "The AI service is currently unavailable. Please try again."
 
 # -----------------------------------------------------
 # 7. UI Header
