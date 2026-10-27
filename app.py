@@ -37,10 +37,9 @@ Rules:
 # -----------------------------------------------------
 # 4. Initialize model
 # -----------------------------------------------------
-model = genai.GenerativeModel(
-    "gemini-1.5-flash",
-    system_instruction=SYSTEM_PROMPT,
-)
+# Use the SDK version supported by the installed google-generativeai package.
+# In older versions, `system_instruction` is not accepted here.
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -----------------------------------------------------
 # 5. Session State
@@ -61,9 +60,11 @@ def render_messages():
 
 
 def get_ai_reply(user_message: str) -> str:
+    prompt = f"{SYSTEM_PROMPT}\n\nUser: {user_message}"
+
     for attempt in range(3):
         try:
-            response = st.session_state.chat.send_message(user_message)
+            response = st.session_state.chat.send_message(prompt)
             return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
         except Exception as e:
             msg = str(e)
