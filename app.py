@@ -37,7 +37,6 @@ Rules:
 # -----------------------------------------------------
 # 4. Initialize model
 # -----------------------------------------------------
-# Use a model name compatible with the installed google-generativeai SDK.
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -----------------------------------------------------
@@ -45,9 +44,6 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 # -----------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[])
 
 # -----------------------------------------------------
 # 6. Helper Functions
@@ -58,12 +54,21 @@ def render_messages():
             st.markdown(msg["content"])
 
 
+def recent_context(limit=6):
+    recent = st.session_state.messages[-limit:]
+    context = ""
+    for msg in recent:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        context += f"{role}: {msg['content']}\n\n"
+    return context
+
+
 def get_ai_reply(user_message: str) -> str:
-    prompt = f"{SYSTEM_PROMPT}\n\nUser: {user_message}"
+    prompt = f"{SYSTEM_PROMPT}\n\n{recent_context()}\nUser: {user_message}"
 
     for attempt in range(3):
         try:
-            response = st.session_state.chat.send_message(prompt)
+            response = model.generate_content(prompt)
             return response.text if getattr(response, "text", None) else "⚠️ AI could not generate a response."
         except Exception as e:
             msg = str(e)
@@ -86,7 +91,6 @@ st.caption("A friendly AI chatbot ready to chat with you 🤖💬")
 st.sidebar.title("Controls")
 if st.sidebar.button("Clear Chat"):
     st.session_state.messages = []
-    st.session_state.chat = model.start_chat(history=[])
     st.rerun()
 
 # -----------------------------------------------------
@@ -110,3 +114,6 @@ if user_input:
         st.markdown(ai_reply)
 
     st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+
+    if len(st.session_state.messages) > 12:
+        st.session_state.messages = st.session_state.messages[-12:]
