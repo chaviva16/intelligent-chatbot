@@ -37,8 +37,7 @@ Rules:
 # -----------------------------------------------------
 # 4. Initialize model
 # -----------------------------------------------------
-# Use the SDK version supported by the installed google-generativeai package.
-# In older versions, `system_instruction` is not accepted here.
+# Use a model name compatible with the installed google-generativeai SDK.
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -----------------------------------------------------
@@ -74,6 +73,7 @@ def get_ai_reply(user_message: str) -> str:
                     continue
                 return "The AI service is temporarily slow. Please try again in a moment."
             return f"Sorry, I hit an error while generating a response: {e}"
+
     return "The AI service is currently unavailable. Please try again."
 
 # -----------------------------------------------------
